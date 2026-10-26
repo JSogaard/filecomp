@@ -7,6 +7,9 @@ use chrono::{DateTime, Local};
 use clap::Parser;
 use sha2::Digest;
 
+/// A simple file comparison tool.
+/// 
+/// Files can either be compared with SHA256 (default) or quickly by size and modification date.
 #[derive(Parser, Debug)]
 struct Cli {
     path1: PathBuf,
