@@ -59,9 +59,9 @@ fn compare_hashes(path1: &Path, path2: &Path, print: bool) -> Result<()> {
    let (filename1, filename2) = get_filenames(path1, path2);
 
     if hash1 == hash2 {
-        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\nThey are identical")
+        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are identical")
     } else {
-        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\nThey are different")
+        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are different")
     };
 
     if print {
@@ -69,6 +69,22 @@ fn compare_hashes(path1: &Path, path2: &Path, print: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn format_file_size(size: u64) -> String {
+    let output;
+    if size >= 1 << 40 {
+        output  = format!("{:.2} TB ({} bytes)", size as f64 / (1u64 << 40) as f64, size)
+    } else if size >= 1 << 30 {
+        output  = format!("{:.2} GB ({} bytes)", size as f64 / (1u64 << 30) as f64, size)
+    } else if size >= 1 << 20 {
+        output  = format!("{:.2} MB ({} bytes)", size as f64 / (1u64 << 20) as f64, size)
+    } else if size >= 1 << 10 {
+        output  = format!("{:.2} KB ({} bytes)", size as f64 / (1u64 << 10) as f64, size)
+    } else {
+        output  = format!("{} bytes", size)
+    }
+    output
 }
 
 fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
@@ -83,17 +99,17 @@ fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
     let (filename1, filename2) = get_filenames(path1, path2);
 
     if size1 == size2 && modified1 == modified2 {
-        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\nThey are identical")
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey seem identical")
     } else {
-        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\nThey are different")
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are different")
     };
 
     if print {
         let date1: DateTime<Local> = modified1.into();
         let date2: DateTime<Local> = modified2.into();
 
-        println!("\nFile 1\nSize: {size1} bytes\nModification date: {}", date1.format("%Y:%m:%d %H:%M:%S"));
-        println!("\nFile 2\nSize: {size2} bytes\nModification date: {}", date2.format("%Y:%m:%d %H:%M:%S"));
+        println!("\nFile 1\nSize: {}\nModification date: {}", format_file_size(size1), date1.format("%Y:%m:%d %H:%M:%S"));
+        println!("\nFile 2\nSize: {}\nModification date: {}", format_file_size(size2), date2.format("%Y:%m:%d %H:%M:%S"));
     }
 
     Ok(())
