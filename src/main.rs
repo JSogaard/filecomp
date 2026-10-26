@@ -92,8 +92,8 @@ fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
         let date1: DateTime<Local> = modified1.into();
         let date2: DateTime<Local> = modified2.into();
 
-        println!("\nFile 1\nSize: {size1}\nModification date: {}", date1.format("%Y:%m:%d %H:%M:%S"));
-        println!("\nFile 2\nSize: {size2}\nModification date: {}", date2.format("%Y:%m:%d %H:%M:%S"));
+        println!("\nFile 1\nSize: {size1} bytes\nModification date: {}", date1.format("%Y:%m:%d %H:%M:%S"));
+        println!("\nFile 2\nSize: {size2} bytes\nModification date: {}", date2.format("%Y:%m:%d %H:%M:%S"));
     }
 
     Ok(())
