@@ -1,10 +1,11 @@
 use std::{
     ffi::OsString, fs, io::Read, path::{Path, PathBuf},
 };
-
+use console::style;
 use anyhow::{Context, Result};
 use chrono::{DateTime, Local};
 use clap::Parser;
+use indicatif::{ProgressBar, ProgressStyle};
 use sha2::Digest;
 
 /// A simple file comparison tool.
@@ -22,13 +23,19 @@ struct Cli {
     print: bool,
 }
 
-fn hash_file(path: &Path) -> Result<[u8; 32]> {
+fn hash_file(path: &Path, file_number: u32) -> Result<[u8; 32]> {
     let mut file =
         fs::File::open(path).with_context(|| format!("Failed to read file at path:\n{path:?}"))?;
 
     let mut hasher = sha2::Sha256::new();
 
     let mut buffer = [0; 8192];
+
+    println!("\nHashing file {file_number}");
+
+    let bar = ProgressBar::new(file.metadata()?.len());
+    let style = ProgressStyle::default_bar().template("{elapsed_precise} {wide_bar} {bytes} / {total_bytes}").unwrap();
+    bar.set_style(style);
 
     loop {
         let count = file
@@ -40,7 +47,12 @@ fn hash_file(path: &Path) -> Result<[u8; 32]> {
         }
 
         sha2::digest::Update::update(&mut hasher, &buffer[..count]);
+        bar.inc(count as u64);
     }
+
+    bar.finish_and_clear();
+
+    println!("Finished hashing file {file_number}");
 
     Ok(hasher.finalize().into())
 }
@@ -53,15 +65,15 @@ fn get_filenames(path1: &Path, path2: &Path) -> (OsString, OsString) {
 }
 
 fn compare_hashes(path1: &Path, path2: &Path, print: bool) -> Result<()> {
-    let hash1 = hash_file(path1)?;
-    let hash2 = hash_file(path2)?;
+    let hash1 = hash_file(path1, 1)?;
+    let hash2 = hash_file(path2, 2)?;
 
    let (filename1, filename2) = get_filenames(path1, path2);
 
     if hash1 == hash2 {
-        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are identical")
+        println!("\nCompared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are {}", style("identical").bold().green())
     } else {
-        println!("Compared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are different")
+        println!("\nCompared files with SHA256, {filename1:?} and {filename2:?}\n\nThey are {}", style("different").bold().red())
     };
 
     if print {
@@ -99,9 +111,9 @@ fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
     let (filename1, filename2) = get_filenames(path1, path2);
 
     if size1 == size2 && modified1 == modified2 {
-        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey seem identical")
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey seem {}", style("identical").bold().green())
     } else {
-        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are different")
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are {}", style("different").bold().red())
     };
 
     if print {
