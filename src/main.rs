@@ -65,6 +65,19 @@ fn get_filenames(path1: &Path, path2: &Path) -> (OsString, OsString) {
 }
 
 fn compare_hashes(path1: &Path, path2: &Path, print: bool) -> Result<()> {
+    let size1 = fs::metadata(path1).with_context(|| format!("Failed to read file at path:\n{path1:?}"))?.len();
+    let size2 = fs::metadata(path2).with_context(|| format!("Failed to read file at path:\n{path2:?}"))?.len();
+
+    if size1 != size2 {
+        println!("The files have different sizes and cannot be identical");
+        
+        if print {
+            println!("File 1: {}\nFile2: {}", format_file_size(size1), format_file_size(size2));
+        }
+
+        return Ok(())
+    }
+
     let hash1 = hash_file(path1, 1)?;
     let hash2 = hash_file(path2, 2)?;
 
@@ -84,19 +97,17 @@ fn compare_hashes(path1: &Path, path2: &Path, print: bool) -> Result<()> {
 }
 
 fn format_file_size(size: u64) -> String {
-    let output;
     if size >= 1 << 40 {
-        output  = format!("{:.2} TB ({} bytes)", size as f64 / (1u64 << 40) as f64, size)
+        format!("{:.2} TB ({} bytes)", size as f64 / (1u64 << 40) as f64, size)
     } else if size >= 1 << 30 {
-        output  = format!("{:.2} GB ({} bytes)", size as f64 / (1u64 << 30) as f64, size)
+        format!("{:.2} GB ({} bytes)", size as f64 / (1u64 << 30) as f64, size)
     } else if size >= 1 << 20 {
-        output  = format!("{:.2} MB ({} bytes)", size as f64 / (1u64 << 20) as f64, size)
+        format!("{:.2} MB ({} bytes)", size as f64 / (1u64 << 20) as f64, size)
     } else if size >= 1 << 10 {
-        output  = format!("{:.2} KB ({} bytes)", size as f64 / (1u64 << 10) as f64, size)
+        format!("{:.2} KB ({} bytes)", size as f64 / (1u64 << 10) as f64, size)
     } else {
-        output  = format!("{} bytes", size)
+        format!("{} bytes", size)
     }
-    output
 }
 
 fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
@@ -112,8 +123,10 @@ fn quick_compare(path1: &Path, path2: &Path, print: bool) -> Result<()> {
 
     if size1 == size2 && modified1 == modified2 {
         println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey seem {}", style("identical").bold().green())
+    } else if size1 == size2 {
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are the same size but the last modification dates are {}. Contents were not checked", style("different").bold().red())
     } else {
-        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are {}", style("different").bold().red())
+        println!("Compared files by size and modification date, {filename1:?} and {filename2:?}\n\nThey are {}. Contents were not checked", style("different").bold().red())
     };
 
     if print {
